@@ -46,13 +46,13 @@ export default function SupplierDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
-  const [filter, setFilter] = useState<"all" | "active" | "draft" | "under500" | "500to1000">("all");
+  const [filter, setFilter] = useState<"all" | "active" | "draft" | "under500" | "500to1000" | "today" | "yesterday" | "thisweek">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
-  const itemsPerPage = 150;
+  const itemsPerPage = 50;
 
   useEffect(() => {
     fetchProducts();
@@ -131,6 +131,13 @@ export default function SupplierDashboard() {
 
   const filteredProducts = products.filter(p => {
     const price = parseFloat(p.variants?.[0]?.price || "0");
+    const updatedDate = new Date(p.updated_at);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - 7);
     
     let matchesFilter = true;
     if (filter === "active") {
@@ -141,6 +148,12 @@ export default function SupplierDashboard() {
       matchesFilter = price < 500;
     } else if (filter === "500to1000") {
       matchesFilter = price >= 500 && price <= 1000;
+    } else if (filter === "today") {
+      matchesFilter = updatedDate >= today;
+    } else if (filter === "yesterday") {
+      matchesFilter = updatedDate >= yesterday && updatedDate < today;
+    } else if (filter === "thisweek") {
+      matchesFilter = updatedDate >= weekStart;
     }
     
     const sku = p.variants?.[0]?.sku || "";
@@ -149,6 +162,9 @@ export default function SupplierDashboard() {
       sku.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesFilter && matchesSearch;
+  }).sort((a, b) => {
+    // Sort by latest updated first
+    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
   });
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -162,6 +178,20 @@ export default function SupplierDashboard() {
     const price = parseFloat(p.variants?.[0]?.price || "0");
     return price >= 500 && price <= 1000;
   }).length;
+  
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - 7);
+  
+  const todayCount = products.filter(p => new Date(p.updated_at) >= today).length;
+  const yesterdayCount = products.filter(p => {
+    const updated = new Date(p.updated_at);
+    return updated >= yesterday && updated < today;
+  }).length;
+  const thisWeekCount = products.filter(p => new Date(p.updated_at) >= weekStart).length;
 
   useEffect(() => {
     setCurrentPage(1);
@@ -195,66 +225,66 @@ export default function SupplierDashboard() {
       </Head>
       
       <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+        <div className="bg-white border-b sticky top-0 z-20 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
             <img 
               src="https://noonsbaby.com/cdn/shop/files/Logo_11.png" 
               alt="Noons Baby Logo" 
-              className="h-12"
+              className="h-8 sm:h-12"
             />
-            <h1 className="text-2xl font-bold text-gray-800">Supplier Portal</h1>
+            <h1 className="text-base sm:text-2xl font-bold text-gray-800">Supplier Portal</h1>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto p-8 space-y-6">
-          <Card className="border-blue-200 bg-blue-50">
+        <div className="max-w-7xl mx-auto p-3 sm:p-8 space-y-4 sm:space-y-6">
+          <Card className="border-blue-200 bg-blue-50 py-0">
             <CardHeader 
-              className="pb-3 cursor-pointer hover:bg-blue-100 transition-colors rounded-t-lg"
+              className="pb-3 cursor-pointer transition-colors rounded-t-lg"
               onClick={() => setShowInstructions(!showInstructions)}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-4">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">📢</span>
-                  <CardTitle className="text-lg">গুরুত্বপূর্ণ নির্দেশনা - Important Instructions</CardTitle>
+                  <CardTitle className="text-sm">গুরুত্বপূর্ণ নির্দেশনা - Important Instructions</CardTitle>
                 </div>
                 {showInstructions ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
               </div>
             </CardHeader>
             {showInstructions && (
               <CardContent className="space-y-3 text-sm">
-                <div className="bg-white rounded-lg p-4 border border-blue-100">
-                  <p className="font-semibold text-blue-900 mb-2">🎯 প্রথমে এই প্রোডাক্টগুলো আপডেট করুন:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-700">
+                <div className="bg-white rounded-lg p-3 sm:p-4 border border-blue-100">
+                  <p className="font-semibold text-blue-900 mb-2 text-xs sm:text-sm">🎯 প্রথমে এই প্রোডাক্টগুলো আপডেট করুন:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-700 text-xs sm:text-sm">
                     <li><strong>৳৫০০ এর নিচে</strong> - এই প্রোডাক্টগুলো আমাদের বিজ্ঞাপনে চলছে (সবচেয়ে গুরুত্বপূর্ণ)</li>
                     <li><strong>৳৫০০-১০০০</strong> - এগুলোও বিজ্ঞাপনে আছে (গুরুত্বপূর্ণ)</li>
                   </ul>
                 </div>
 
-                <div className="bg-white rounded-lg p-4 border border-green-100">
-                  <p className="font-semibold text-green-900 mb-2">✅ কিভাবে আপডেট করবেন:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-700">
+                <div className="bg-white rounded-lg p-3 sm:p-4 border border-green-100">
+                  <p className="font-semibold text-green-900 mb-2 text-xs sm:text-sm">✅ কিভাবে আপডেট করবেন:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-gray-700 text-xs sm:text-sm">
                     <li><strong>Active</strong> = স্টক আছে (গ্রাহক কিনতে পারবে)</li>
                     <li><strong>Draft</strong> = স্টক নেই (গ্রাহক দেখবে না)</li>
-                    <li>একসাথে অনেক প্রোডাক্ট আপডেট করতে চেকবক্স দিয়ে সিলেক্ট করুন</li>
+                    <li className="hidden sm:list-item">একসাথে অনেক প্রোডাক্ট আপডেট করতে চেকবক্স দিয়ে সিলেক্ট করুন</li>
                   </ul>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-white rounded-lg p-3 border shadow-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                  <div className="bg-white rounded-lg p-2 sm:p-3 border shadow-sm">
                     <p className="text-xs text-gray-600 mb-1">Under ৳500</p>
-                    <p className="text-2xl font-bold text-blue-600">{under500Count}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-blue-600">{under500Count}</p>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border shadow-sm">
-                    <p className="text-xs text-gray-600 mb-1">৳500 - ৳1000</p>
-                    <p className="text-2xl font-bold text-indigo-600">{range500to1000Count}</p>
+                  <div className="bg-white rounded-lg p-2 sm:p-3 border shadow-sm">
+                    <p className="text-xs text-gray-600 mb-1">৳500-1000</p>
+                    <p className="text-lg sm:text-2xl font-bold text-indigo-600">{range500to1000Count}</p>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border shadow-sm">
+                  <div className="bg-white rounded-lg p-2 sm:p-3 border shadow-sm">
                     <p className="text-xs text-gray-600 mb-1">Active</p>
-                    <p className="text-2xl font-bold text-green-600">{activeCount}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-green-600">{activeCount}</p>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border shadow-sm">
+                  <div className="bg-white rounded-lg p-2 sm:p-3 border shadow-sm">
                     <p className="text-xs text-gray-600 mb-1">Draft</p>
-                    <p className="text-2xl font-bold text-orange-600">{draftCount}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-orange-600">{draftCount}</p>
                   </div>
                 </div>
               </CardContent>
@@ -262,94 +292,182 @@ export default function SupplierDashboard() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Products</CardTitle>
-              <CardDescription>Search, filter, and manage product availability</CardDescription>
+            <CardHeader className="pb-3 sm:pb-4">
+              <CardTitle className="text-base sm:text-lg">Products</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Search, filter, and manage product availability</CardDescription>
               
-              <div className="flex flex-col gap-3 mt-4">
-                <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col gap-2 sm:gap-3 mt-3 sm:mt-4">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
                       placeholder="Search by SKU or title..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 text-sm"
                     />
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 items-center">
-                  <div className="flex gap-2 flex-wrap">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center">
+                  <div className="flex gap-1.5 sm:gap-2 flex-wrap">
                     <Button 
                       variant={filter === "all" ? "default" : "outline"}
                       onClick={() => setFilter("all")}
                       size="sm"
+                      className="text-xs h-8"
                     >
-                      All ({products.length})
+                      All
                     </Button>
                     <Button 
                       variant={filter === "under500" ? "default" : "outline"}
                       onClick={() => setFilter("under500")}
                       size="sm"
+                      className="text-xs h-8"
                     >
-                      🎯 Under ৳500 ({under500Count})
+                      🎯 <span className="hidden xs:inline">Under</span> ৳500
                     </Button>
                     <Button 
                       variant={filter === "500to1000" ? "default" : "outline"}
                       onClick={() => setFilter("500to1000")}
                       size="sm"
+                      className="text-xs h-8"
                     >
-                      ⭐ ৳500-1000 ({range500to1000Count})
+                      ⭐ ৳500-1K
                     </Button>
                     <Button 
                       variant={filter === "active" ? "default" : "outline"}
                       onClick={() => setFilter("active")}
                       size="sm"
+                      className="text-xs h-8"
                     >
-                      Active ({activeCount})
+                      Active
                     </Button>
                     <Button 
                       variant={filter === "draft" ? "default" : "outline"}
                       onClick={() => setFilter("draft")}
                       size="sm"
+                      className="text-xs h-8"
                     >
-                      Draft ({draftCount})
+                      Draft
+                    </Button>
+                    <div className="hidden sm:block w-px h-6 bg-gray-300 mx-1"></div>
+                    <Button 
+                      variant={filter === "today" ? "default" : "outline"}
+                      onClick={() => setFilter("today")}
+                      size="sm"
+                      className="text-xs h-8"
+                    >
+                      📅 Updated Today
+                    </Button>
+                    <Button 
+                      variant={filter === "yesterday" ? "default" : "outline"}
+                      onClick={() => setFilter("yesterday")}
+                      size="sm"
+                      className="text-xs h-8"
+                    >
+                      Updated Yest.
+                    </Button>
+                    <Button 
+                      variant={filter === "thisweek" ? "default" : "outline"}
+                      onClick={() => setFilter("thisweek")}
+                      size="sm"
+                      className="text-xs h-8"
+                    >
+                      Updated This Week
                     </Button>
                   </div>
 
                   {selectedIds.size > 0 && (
-                    <div className="flex gap-2 ml-auto items-center">
-                      <span className="text-sm text-gray-600">{selectedIds.size} selected</span>
-                      <Button 
-                        size="sm" 
-                        onClick={() => bulkUpdateStatus("active")}
-                        disabled={bulkUpdating}
-                      >
-                        Set Active
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="destructive"
-                        onClick={() => bulkUpdateStatus("draft")}
-                        disabled={bulkUpdating}
-                      >
-                        Set Draft
-                      </Button>
+                    <div className="flex gap-1.5 sm:gap-2 ml-auto items-center w-full sm:w-auto justify-between sm:justify-end bg-blue-50 sm:bg-transparent p-2 sm:p-0 rounded-lg sm:rounded-none">
+                      <span className="text-xs sm:text-sm text-gray-600 font-medium">{selectedIds.size} selected</span>
+                      <div className="flex gap-1.5">
+                        <Button 
+                          size="sm" 
+                          onClick={() => bulkUpdateStatus("active")}
+                          disabled={bulkUpdating}
+                          className="text-xs h-8"
+                        >
+                          Active
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => bulkUpdateStatus("draft")}
+                          disabled={bulkUpdating}
+                          className="text-xs h-8"
+                        >
+                          Draft
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 sm:p-6">
               {loading ? (
-                <p className="text-center py-8">Loading products...</p>
+                <p className="text-center py-8 text-sm">Loading products...</p>
               ) : (
                 <>
-                  <div className="text-sm text-gray-600 mb-3">
-                    Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredProducts.length)} of {filteredProducts.length} products
+                  <div className="text-xs sm:text-sm text-gray-600 mb-3 px-3 sm:px-0">
+                    Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredProducts.length)} of {filteredProducts.length}
                   </div>
-                  <div className="overflow-x-auto">
+                  
+                  {/* Mobile Card View */}
+                  <div className="block sm:hidden space-y-3 px-3">
+                    {paginatedProducts.map((product) => {
+                      const isActive = product.status === "active";
+                      const timeAgo = getTimeAgo(product.updated_at);
+                      
+                      return (
+                        <div 
+                          key={product.id}
+                          className={`${isActive ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"} border rounded-lg p-3 ${selectedIds.has(product.id) ? "ring-2 ring-blue-500" : ""}`}
+                        >
+                          <div className="flex gap-3">
+                            <button onClick={() => toggleSelect(product.id)} className="flex-shrink-0 pt-1">
+                              {selectedIds.has(product.id) ? 
+                                <CheckSquare className="w-5 h-5 text-blue-600" /> : 
+                                <Square className="w-5 h-5 text-gray-400" />
+                              }
+                            </button>
+                            <img 
+                              src={product.images[0]?.src || "/placeholder.png"} 
+                              alt={product.title}
+                              className="w-16 h-16 object-cover rounded border flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-sm line-clamp-2 mb-1">{product.title}</h3>
+                              <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                                <span className="font-mono">{product.variants?.[0]?.sku || "N/A"}</span>
+                                <span>•</span>
+                                <span className="font-semibold text-gray-900">৳{product.variants?.[0]?.price || "0"}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <Badge variant={isActive ? "default" : "secondary"} className="text-xs">
+                                  {product.status}
+                                </Badge>
+                                <span className="text-xs text-gray-500">{timeAgo}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={isActive ? "destructive" : "default"}
+                            onClick={() => toggleStatus(product.id, product.status)}
+                            disabled={updating === product.id}
+                            className="w-full mt-3 text-xs h-8"
+                          >
+                            {updating === product.id ? "..." : isActive ? "Set Draft" : "Set Active"}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden sm:block overflow-x-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
                         <TableRow>
@@ -429,23 +547,25 @@ export default function SupplierDashboard() {
                   </div>
 
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 mt-6">
+                    <div className="flex items-center justify-center gap-2 mt-4 sm:mt-6 px-3 sm:px-0">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
+                        className="text-xs h-8"
                       >
-                        Previous
+                        Prev
                       </Button>
-                      <span className="text-sm text-gray-600">
-                        Page {currentPage} of {totalPages}
+                      <span className="text-xs sm:text-sm text-gray-600 px-2">
+                        {currentPage}/{totalPages}
                       </span>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
+                        className="text-xs h-8"
                       >
                         Next
                       </Button>

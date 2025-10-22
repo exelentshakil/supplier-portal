@@ -55,6 +55,75 @@ export async function fetchProductsByVendor(vendor: string = "Wellbeing") {
   return allProducts;
 }
 
+export async function fetchAllCollections() {
+  let allCollections: any[] = [];
+  
+  // Fetch custom collections
+  let url = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/custom_collections.json?limit=250`;
+  
+  while (url) {
+    const response = await fetch(url, { headers: HEADERS });
+    
+    if (!response.ok) {
+      throw new Error(`Shopify API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    allCollections = allCollections.concat(data.custom_collections || []);
+
+    const linkHeader = response.headers.get("link");
+    const nextLink = linkHeader?.match(/<([^>]+)>;\s*rel="next"/);
+    url = nextLink ? nextLink[1] : "";
+  }
+
+  // Also fetch smart collections
+  url = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/smart_collections.json?limit=250`;
+  
+  while (url) {
+    const response = await fetch(url, { headers: HEADERS });
+    
+    if (!response.ok) {
+      break;
+    }
+
+    const data = await response.json();
+    allCollections = allCollections.concat(data.smart_collections || []);
+
+    const linkHeader = response.headers.get("link");
+    const nextLink = linkHeader?.match(/<([^>]+)>;\s*rel="next"/);
+    url = nextLink ? nextLink[1] : "";
+  }
+
+  // Remove duplicates by ID
+  const uniqueCollections = allCollections.filter((col, index, self) => 
+    index === self.findIndex(c => c.id === col.id)
+  );
+
+  return uniqueCollections;
+}
+
+export async function fetchProductsByCollection(collectionId: number) {
+  let allProducts: ShopifyProduct[] = [];
+  let url = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/collections/${collectionId}/products.json?limit=250`;
+
+  while (url) {
+    const response = await fetch(url, { headers: HEADERS });
+    
+    if (!response.ok) {
+      throw new Error(`Shopify API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    allProducts = allProducts.concat(data.products || []);
+
+    const linkHeader = response.headers.get("link");
+    const nextLink = linkHeader?.match(/<([^>]+)>;\s*rel="next"/);
+    url = nextLink ? nextLink[1] : "";
+  }
+
+  return allProducts;
+}
+
 export async function fetchAllActiveProducts() {
   let allProducts: ShopifyProduct[] = [];
   let url = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/products.json?limit=250&status=active`;
