@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchAllActiveProducts } from "@/lib/shopify";
+import {fetchAllActiveProducts, ShopifyProduct} from "@/lib/shopify";
 
 function stripHtml(html: string): string {
   return html
@@ -17,7 +17,7 @@ function sanitizeXml(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function generateProductXml(product: any): string {
+function generateProductXml(product: ShopifyProduct): string {
   const variant = product.variants[0];
   const image = product.images[0]?.src || "";
   const regularPrice = variant.compare_at_price || variant.price;

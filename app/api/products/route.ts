@@ -2,17 +2,12 @@ import { NextResponse } from "next/server";
 import { fetchProductsByVendor } from "@/lib/shopify";
 
 export async function GET(request: Request) {
-  try {
     const { searchParams } = new URL(request.url);
     const vendor = searchParams.get("vendor") || "Wellbeing";
-    const collectionId = searchParams.get("collection");
-
     let products;
-    
 
+    try {
       products = await fetchProductsByVendor(vendor);
-    
-
     return NextResponse.json({
       success: true,
       count: products.length,

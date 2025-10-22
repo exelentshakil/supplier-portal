@@ -24,32 +24,6 @@ interface Product {
   images: Array<{ src: string }>;
 }
 
-// Category keywords to extract from product titles
-const CATEGORY_KEYWORDS = [
-  "Cleanser", "Moisturizer", "Serum", "Essence", "Toner", "Sunscreen",
-  "Mask", "Sheet Mask", "Eye Care", "Lip Care", "Exfoliator",
-  "Shampoo", "Conditioner", "Body Wash", "Soap", "Shower Gel",
-  "Face Scrubber", "Body Scrubber",
-  "Teether", "Spoon", "Feeder", "Mumpot", "Bib", "Pacifier", "Nipple", "Diaper",
-  "Breast Pump", "Baby Care", "Daily Care",
-  "Perfume", "Fragrance",
-  "Makeup", "Foundation", "Lipstick", "Mascara", "Eyeliner",
-  "Supplement", "Pregnancy Test", "Menstrual Pad", "Birth Control",
-  "Electric", "Tool", "Beauty Tool"
-];
-
-function extractCategory(title: string): string {
-  const lowerTitle = title.toLowerCase();
-  
-  for (const keyword of CATEGORY_KEYWORDS) {
-    if (lowerTitle.includes(keyword.toLowerCase())) {
-      return keyword;
-    }
-  }
-  
-  return "Other";
-}
-
 function getTimeAgo(dateString: string): string {
   const now = new Date();
   const updated = new Date(dateString);
