@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shopify Supplier Portal
 
-## Getting Started
+A Next.js web application that lets suppliers manage product availability in real-time. Built to solve the stock sync problem between suppliers and a Shopify store running Facebook ads.
 
-First, run the development server:
+## The Problem
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Running Facebook ads with 1500+ products from external suppliers creates a nightmare scenario:
+- Customer orders 10 products
+- 4 are out of stock at supplier
+- Manual coordination for 100+ daily orders = lost time, money, and reputation
+
+## The Solution
+
+Give suppliers a simple web portal where they can:
+- Toggle products between Active (in stock) → visible in store
+- Toggle products to Draft (out of stock) → hidden from customers
+- Focus on priority products (under ৳500, ৳500-1000) that are actively advertised
+- Bulk update multiple products at once
+
+Changes sync instantly to Shopify. Facebook catalog updates hourly via XML feed.
+
+## Tech Stack
+
+- **Next.js 15** (App Router)
+- **TypeScript**
+- **Tailwind CSS + shadcn/ui**
+- **Shopify Admin API**
+- **Vercel** (deployment)
+
+## Features
+
+- Real-time product status updates (Active/Draft)
+- Priority filtering for ad products (Under ৳500, ৳500-1000)
+- Bulk select and update
+- Search by SKU or product title
+- Color-coded rows (green=active, orange=draft)
+- Sticky table headers for easy scrolling
+- Last updated timestamps
+- XML feed for Facebook Product Catalog
+- Bengali + English instructions for suppliers
+
+## Project Structure
+
+```
+/app
+/api
+/products
+route.ts              # GET products by vendor
+/[id]/route.ts        # PUT update product status
+/collections
+route.ts              # GET collections (optional)
+/feed
+route.ts              # GET XML feed for Facebook
+page.tsx                  # Supplier dashboard UI
+/lib
+shopify.ts                # Shopify API helper functions
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone and install:
+```bash
+git clone <repo>
+cd supplier-portal
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Add environment variables (`.env.local`):
+```env
+SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
+SHOPIFY_ACCESS_TOKEN=your_admin_api_token
+SHOPIFY_API_VERSION=2023-07
+SHOPIFY_STORE_DOMAIN_LIVE=noonsbaby.com
+```
 
-## Learn More
+3. Install shadcn/ui components:
+```bash
+npx shadcn@latest init
+npx shadcn@latest add button card table badge input
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Run locally:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Deploy to Vercel:
+```bash
+vercel --prod
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## API Routes
 
-## Deploy on Vercel
+### `GET /api/products?vendor=Wellbeing`
+Returns all products for specified vendor
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### `PUT /api/products/[id]`
+Updates product status (active/draft)
+```json
+{ "status": "active" }
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### `GET /api/feed`
+Returns XML feed for Facebook Product Catalog
+- Only active products
+- Price in BDT
+- Includes variant IDs, SKUs, compare_at_price
+
+## Facebook Catalog Integration
+
+Set Facebook to fetch feed from:
+```
+https://your-app.vercel.app/api/feed
+```
+
+Update frequency: Hourly (or as needed)
+
+## What I Learned
+
+- Shopify Admin API pagination and rate limiting
+- Building supplier-focused UIs (not customer-facing)
+- Real-time sync between external suppliers and e-commerce platforms
+- Handling 1500+ products client-side efficiently
+- Bengali localization for non-technical users
+- XML feed generation for Facebook Product Catalogs
+
+## Future Improvements
+
+- Multi-vendor support with authentication
+- Activity logs (who changed what, when)
+- Email/SMS notifications on stock changes
+- Low stock alerts
+- CSV import/export
+- Analytics dashboard
+
+## Why This Matters
+
+This isn't a CRUD app. It solves a real business problem:
+- Saves hours of manual coordination per day
+- Prevents overselling out-of-stock items
+- Maintains ad campaign effectiveness
+- Scales to multiple suppliers
+
+Built in a weekend. Deployed to production. Actually used by suppliers daily.
+
+---
+
+Built with Next.js 15 + TypeScript + Shopify API
