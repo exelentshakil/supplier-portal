@@ -35,7 +35,7 @@ function generateProductXml(product: ShopifyProduct): string {
 
   return `
     <item>
-      <title>${sanitizeXml(product.title)}</title>
+      <title>${sanitizeXml(product.title.toString().substring(0, 200))}</title>      
       <link>${sanitizeXml(productUrl)}</link>
       <description>${sanitizeXml(description)}</description>
       <g:google_product_category></g:google_product_category>
