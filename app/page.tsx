@@ -269,7 +269,7 @@ export default function SupplierDashboard() {
                   </ul>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pb-5">
                   <div className="bg-white rounded-lg p-2 sm:p-3 border shadow-sm">
                     <p className="text-xs text-gray-600 mb-1">Under ৳500</p>
                     <p className="text-lg sm:text-2xl font-bold text-blue-600">{under500Count}</p>
